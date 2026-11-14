@@ -13,5 +13,16 @@
          xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
     <description>PMD quickstart, with Project Pulse's decisions.</description>
     <rule ref="rulesets/java/quickstart.xml">
+        <!-- D2: JPA requires an accessible no-argument constructor to instantiate entities. -->
+        <exclude name="UncommentedEmptyConstructor"/>
+        <!-- D4: Project Pulse uses parameterized SLF4J logging; explicit guards are reserved for
+             genuinely expensive arguments, where a guard or SLF4J 2 supplier is clearer. -->
+        <exclude name="GuardLogStatement"/>
+    </rule>
+    <rule ref="category/java/documentation.xml/UncommentedEmptyConstructor">
+        <properties>
+            <property name="violationSuppressXPath"
+                      value="./ancestor::ClassDeclaration[pmd-java:hasAnnotation('jakarta.persistence.Entity')]"/>
+        </properties>
     </rule>
 </ruleset>
