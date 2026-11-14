@@ -7,4 +7,31 @@
 
      Unlike the baseline, this file may grow, but every entry is a reviewed decision. -->
 <FindBugsFilter>
+  <!-- D1: EI_EXPOSE_REP/EI_EXPOSE_REP2 are enforced for DTOs and standalone value objects.
+       JPA entities deliberately expose managed associations and collection instances; copying them
+       can break Hibernate dirty tracking, cascading, and bidirectional relationship maintenance. -->
+  <Match>
+    <Annotation name="jakarta.persistence.Entity"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+
+  <!-- Spring dependencies are framework-managed collaborators, not owned mutable state. Copying
+       an injected service/controller collaborator would be meaningless and can bypass proxies. -->
+  <Match>
+    <Annotation name="org.springframework.stereotype.Service"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+  <Match>
+    <Annotation name="org.springframework.web.bind.annotation.RestController"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+  <!-- The affected scheduler and seed initializer are @Component classes with injected collaborators. -->
+  <Match>
+    <Class name="team.projectpulse.notification.WeeklyReminderScheduler"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+  <Match>
+    <Class name="team.projectpulse.seed.DataInitializer"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
 </FindBugsFilter>
