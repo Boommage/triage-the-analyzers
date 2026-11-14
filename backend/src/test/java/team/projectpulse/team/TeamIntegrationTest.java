@@ -8,6 +8,8 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +21,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
@@ -91,6 +94,40 @@ class TeamIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
                 .andExpect(jsonPath("$.message").value("Find teams successfully"))
                 .andExpect(jsonPath("$.data.content", Matchers.hasSize(3)));
+    }
+
+    @Test
+    @ResourceLock(Resources.LOCALE)
+    void adminBingyangFindsTeamByNameUnderTurkishLocale() throws Exception {
+        Locale originalLocale = Locale.getDefault();
+        Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+        try {
+            Map<String, Object> teamDto = new HashMap<>();
+            teamDto.put("teamName", "INDIGO");
+            teamDto.put("description", "Turkish locale regression team");
+            teamDto.put("teamWebsiteUrl", "https://www.indigo.com");
+            teamDto.put("sectionId", 2);
+
+            String teamJson = this.jsonMapper.writeValueAsString(teamDto);
+
+            this.mockMvc.perform(post(this.baseUrl + "/teams").contentType(MediaType.APPLICATION_JSON).content(teamJson).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                    .andExpect(jsonPath("$.flag").value(true))
+                    .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                    .andExpect(jsonPath("$.message").value("Add team successfully"))
+                    .andExpect(jsonPath("$.data.teamName").value("INDIGO"));
+
+            Map<String, String> searchCriteria = Map.of("teamName", "INDIGO");
+            String searchJson = this.jsonMapper.writeValueAsString(searchCriteria);
+
+            this.mockMvc.perform(post(this.baseUrl + "/teams/search").contentType(MediaType.APPLICATION_JSON).content(searchJson).accept(MediaType.APPLICATION_JSON).header(HttpHeaders.AUTHORIZATION, this.adminBingyangToken))
+                    .andExpect(jsonPath("$.flag").value(true))
+                    .andExpect(jsonPath("$.code").value(StatusCode.SUCCESS))
+                    .andExpect(jsonPath("$.message").value("Find teams successfully"))
+                    .andExpect(jsonPath("$.data.content", Matchers.hasSize(1)))
+                    .andExpect(jsonPath("$.data.content[0].teamName").value("INDIGO"));
+        } finally {
+            Locale.setDefault(originalLocale);
+        }
     }
 
     @Test
